@@ -220,6 +220,7 @@ extension PassportReader {
         } catch {
             authenticationMethod == .PACE ? try await doBAC(tagReader) : try await doPACE(tagReader)
         }
+        _ = try await tagReader.selectPassportApplication()
         
         // Now to read the datagroups
         try await readDataGroups(tagReader: tagReader)
