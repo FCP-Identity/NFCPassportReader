@@ -27,12 +27,10 @@ public class PassportReader : NSObject {
     private var readAllDatagroups = false
     private var skipSecureElements = true
     private var skipCA = false
-    private var skipPACE = false
+    private var authenticationMethod: AuthenticationMethod = .PACE
     private var useExtendedMode = false
 
-    private var bacHandler : BACHandler?
     private var caHandler : ChipAuthenticationHandler?
-    private var paceHandler : PACEHandler?
     private var mrzKey : String = ""
     private var aaChallenge: [UInt8]?
     private var dataAmountToReadOverride : Int? = nil
@@ -64,13 +62,13 @@ public class PassportReader : NSObject {
         dataAmountToReadOverride = amount
     }
     
-    public func readPassport( mrzKey : String, tags : [DataGroupId] = [], aaChallenge: [UInt8]? = nil, skipSecureElements : Bool = true, skipCA : Bool = false, skipPACE : Bool = false, useExtendedMode : Bool = false, customDisplayMessage : ((NFCViewDisplayMessage) -> String?)? = nil) async throws -> NFCPassportModel {  
+    public func readPassport( mrzKey : String, tags : [DataGroupId] = [], aaChallenge: [UInt8]? = nil, skipSecureElements : Bool = true, skipCA : Bool = false, authenticationMethod: AuthenticationMethod = .PACE, useExtendedMode : Bool = false, customDisplayMessage : ((NFCViewDisplayMessage) -> String?)? = nil) async throws -> NFCPassportModel {
         
         self.passport = NFCPassportModel()
         self.mrzKey = mrzKey
         self.aaChallenge = aaChallenge
         self.skipCA = skipCA
-        self.skipPACE = skipPACE
+        self.authenticationMethod = authenticationMethod
         self.useExtendedMode = useExtendedMode
         
         self.dataGroupsToRead.removeAll()
@@ -78,9 +76,7 @@ public class PassportReader : NSObject {
         self.nfcViewDisplayMessageHandler = customDisplayMessage
         self.skipSecureElements = skipSecureElements
         self.currentlyReadingDataGroup = nil
-        self.bacHandler = nil
         self.caHandler = nil
-        self.paceHandler = nil
         
         // If no tags specified, read all
         if self.dataGroupsToRead.count == 0 {
@@ -219,30 +215,10 @@ extension PassportReader {
     
     func startReading(tagReader : TagReader) async throws -> NFCPassportModel {
 
-        if !skipPACE {
-            do {
-                let data = try await tagReader.readCardAccess()
-                Logger.passportReader.debug( "Read CardAccess - data \(binToHexRep(data))" )
-                let cardAccess = try CardAccess(data)
-                passport.cardAccess = cardAccess
-     
-                Logger.passportReader.info( "Starting Password Authenticated Connection Establishment (PACE)" )
-                 
-                let paceHandler = try PACEHandler( cardAccess: cardAccess, tagReader: tagReader )
-                try await paceHandler.doPACE(mrzKey: mrzKey )
-                passport.PACEStatus = .success
-                Logger.passportReader.debug( "PACE Succeeded" )
-            } catch {
-                passport.PACEStatus = .failed
-                Logger.passportReader.error( "PACE Failed - falling back to BAC" )
-            }
-            
-            _ = try await tagReader.selectPassportApplication()
-        }
-        
-        // If either PACE isn't supported, we failed whilst doing PACE or we didn't even attempt it, then fall back to BAC
-        if passport.PACEStatus != .success {
-            try await doBACAuthentication(tagReader : tagReader)
+        do {
+            authenticationMethod == .PACE ? try await doPACE(tagReader) : try await doBAC(tagReader)
+        } catch {
+            authenticationMethod == .PACE ? try await doBAC(tagReader) : try await doPACE(tagReader)
         }
         
         // Now to read the datagroups
@@ -258,6 +234,19 @@ extension PassportReader {
         self.passport.verifyPassport(masterListURL: self.masterListURL, useCMSVerification: self.passiveAuthenticationUsesOpenSSL)
 
         return self.passport
+    }
+    
+    func doPACE(_ tagReader : TagReader) async throws {
+        let data = try await tagReader.readCardAccess()
+        Logger.passportReader.debug( "Read CardAccess - data \(binToHexRep(data))" )
+        let cardAccess = try CardAccess(data)
+        passport.cardAccess = cardAccess
+        Logger.passportReader.info( "Starting Password Authenticated Connection Establishment (PACE)" )
+        passport.PACEStatus = .failed
+        let paceHandler = try PACEHandler( cardAccess: cardAccess, tagReader: tagReader )
+        try await paceHandler.doPACE(mrzKey: mrzKey )
+        passport.PACEStatus = .success
+        Logger.passportReader.debug( "PACE Succeeded" )
     }
     
     
@@ -276,15 +265,15 @@ extension PassportReader {
     }
     
 
-    func doBACAuthentication(tagReader : TagReader) async throws {
+    func doBAC(_ tagReader: TagReader) async throws {
         self.currentlyReadingDataGroup = nil
         
         Logger.passportReader.info( "Starting Basic Access Control (BAC)" )
         
         self.passport.BACStatus = .failed
 
-        self.bacHandler = BACHandler( tagReader: tagReader )
-        try await bacHandler?.performBACAndGetSessionKeys( mrzKey: mrzKey )
+        let bacHandler = BACHandler( tagReader: tagReader )
+        try await bacHandler.performBACAndGetSessionKeys( mrzKey: mrzKey )
         Logger.passportReader.info( "Basic Access Control (BAC) - SUCCESS!" )
 
         self.passport.BACStatus = .success
@@ -323,7 +312,7 @@ extension PassportReader {
                             self.passport.chipAuthenticationStatus = .failed
                             
                             // Failed Chip Auth, need to re-establish BAC
-                            try await doBACAuthentication(tagReader: tagReader)
+                            try await doBAC(tagReader)
                         }
                     }
                 }
@@ -393,7 +382,7 @@ extension PassportReader {
                 
                 if redoBAC {
                     // Redo BAC and try again
-                    try await doBACAuthentication(tagReader : tagReader)
+                    try await doBAC(tagReader)
                 } else {
                     // Some other error lets have another try
                 }

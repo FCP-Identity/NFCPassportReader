@@ -48,6 +48,7 @@
 		8B27F2342C60F6650046761F /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B27F20B2C60F6640046761F /* Utils.swift */; };
 		8B27F2352C60F6650046761F /* X509Wrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B27F20C2C60F6640046761F /* X509Wrapper.swift */; };
 		8B27F2392C60F8DE0046761F /* OpenSSL.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B27F2382C60F8DE0046761F /* OpenSSL.xcframework */; };
+		8B73194E2CE264D700F93A85 /* AuthenticationMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B73194D2CE264D600F93A85 /* AuthenticationMethod.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +94,7 @@
 		8B27F20B2C60F6640046761F /* Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		8B27F20C2C60F6640046761F /* X509Wrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = X509Wrapper.swift; sourceTree = "<group>"; };
 		8B27F2382C60F8DE0046761F /* OpenSSL.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = OpenSSL.xcframework; sourceTree = "<group>"; };
+		8B73194D2CE264D600F93A85 /* AuthenticationMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationMethod.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -162,6 +164,7 @@
 			isa = PBXGroup;
 			children = (
 				8B27F1F62C60F6640046761F /* FaceImageInfo.swift */,
+				8B73194D2CE264D600F93A85 /* AuthenticationMethod.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -318,6 +321,7 @@
 				8B27F2122C60F6650046761F /* ChipAuthenticationPublicKeyInfo.swift in Sources */,
 				8B27F2142C60F6650046761F /* DataGroup.swift in Sources */,
 				8B27F22C2C60F6650046761F /* OpenSSLUtils.swift in Sources */,
+				8B73194E2CE264D700F93A85 /* AuthenticationMethod.swift in Sources */,
 				8B27F2352C60F6650046761F /* X509Wrapper.swift in Sources */,
 				8B27F20F2C60F6650046761F /* ActiveAuthenticationInfo.swift in Sources */,
 				8B27F21F2C60F6650046761F /* SecurityInfo.swift in Sources */,
