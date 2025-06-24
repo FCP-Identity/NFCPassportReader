@@ -258,9 +258,16 @@ extension PassportReader {
         self.updateReaderSessionMessage(alertMessage: NFCViewDisplayMessage.activeAuthentication)
 
         Logger.passportReader.info( "Performing Active Authentication" )
-
-        let challenge = aaChallenge ?? generateRandomUInt8Array(8)
-        Logger.passportReader.debug( "Generated Active Authentication challange - \(binToHexRep(challenge))")
+        
+        let challenge: [UInt8]
+        if let existingChallenge = aaChallenge {
+            challenge = existingChallenge
+            Logger.passportReader.debug("Using existing Active Authentication challenge - \(binToHexRep(challenge))")
+        } else {
+            challenge = generateRandomUInt8Array(8)
+            Logger.passportReader.debug("Generated new Active Authentication challenge - \(binToHexRep(challenge))")
+        }
+        
         let response = try await tagReader.doInternalAuthentication(challenge: challenge, useExtendedMode: useExtendedMode)
         self.passport.verifyActiveAuthentication( challenge:challenge, signature:response.data )
     }
