@@ -1,3 +1,7 @@
+V2.3.1
+   Fixed issue reading some JPEG2000 images - they had additional padding after them causeing the image reader to think
+      there was another container
+   Fixed MasterList script parser to handle new LDIF binary format from ICAO PKD
 V2.3.0
    Added fix for OpenSSL 3.3 breaking SOD X509 certificate verification - thanks @SteveDove for reporting and testing
    Added ability to provide a custom AA Challenge key for supporting backend AA challenges and eliminating replay attacks - thanks @Premeide
