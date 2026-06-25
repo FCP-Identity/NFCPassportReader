@@ -263,6 +263,7 @@ extension PassportReader {
             Logger.passportReader.error( "\(self.authenticationMethod) authentication failed - falling back to the other method" )
             authenticationMethod == .PACE ? try await doBACAuthentication(tagReader: tagReader) : try await doPACE(tagReader: tagReader)
         }
+        _ = try await tagReader.selectPassportApplication()
 
         // Now to read the datagroups
         try await readDataGroups(tagReader: tagReader)
